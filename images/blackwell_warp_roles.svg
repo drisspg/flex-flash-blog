@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="980" height="360" viewBox="0 0 980 360" xmlns="http://www.w3.org/2000/svg">
+
+  <text x="490" y="32" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#b0b0b0">
+    FA4 warp roles and Flex extension points
+  </text>
+
+  <text x="40" y="78" text-anchor="start" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#b0b0b0">
+    Forward (SM100)
+  </text>
+
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#ffffff" text-anchor="middle">
+    <rect x="40" y="90" width="130" height="58" rx="8" fill="#4c78a8" stroke="#ee4c2c" stroke-width="3"/>
+    <text x="105" y="112">softmax</text>
+    <text x="105" y="130">warps 0-7</text>
+
+    <rect x="180" y="90" width="130" height="58" rx="8" fill="#8c6bb1" stroke="#ee4c2c" stroke-width="3"/>
+    <text x="245" y="112">correction</text>
+    <text x="245" y="130">warps 8-11</text>
+
+    <rect x="320" y="90" width="130" height="58" rx="8" fill="#ee7a33" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="385" y="112">MMA</text>
+    <text x="385" y="130">warp 12</text>
+
+    <rect x="460" y="90" width="130" height="58" rx="8" fill="#59a14f" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="525" y="112">epilogue</text>
+    <text x="525" y="130">warp 13</text>
+
+    <rect x="600" y="90" width="150" height="58" rx="8" fill="#9aa0a6" stroke="#ee4c2c" stroke-width="3"/>
+    <text x="675" y="112">load/consume</text>
+    <text x="675" y="130">warp 14</text>
+
+    <rect x="760" y="90" width="130" height="58" rx="8" fill="#c7c7c7" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="825" y="112">empty</text>
+    <text x="825" y="130">warp 15</text>
+  </g>
+
+  <text x="40" y="194" text-anchor="start" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#b0b0b0">
+    Backward (SM100)
+  </text>
+
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#ffffff" text-anchor="middle">
+    <rect x="40" y="206" width="130" height="58" rx="8" fill="#4c78a8" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="105" y="228">reduce dQ</text>
+    <text x="105" y="246">warps 0-3</text>
+
+    <rect x="180" y="206" width="160" height="58" rx="8" fill="#2f5d8a" stroke="#ee4c2c" stroke-width="3"/>
+    <text x="260" y="228">compute</text>
+    <text x="260" y="246">warps 4-11</text>
+
+    <rect x="350" y="206" width="120" height="58" rx="8" fill="#ee7a33" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="410" y="228">MMA</text>
+    <text x="410" y="246">warp 12</text>
+
+    <rect x="480" y="206" width="120" height="58" rx="8" fill="#9aa0a6" stroke="#ee4c2c" stroke-width="3"/>
+    <text x="540" y="228">load/consume</text>
+    <text x="540" y="246">warp 13</text>
+
+    <rect x="610" y="206" width="120" height="58" rx="8" fill="#59a14f" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="670" y="228">epilogue</text>
+    <text x="670" y="246">warp 14</text>
+
+    <rect x="740" y="206" width="120" height="58" rx="8" fill="#c7c7c7" stroke="#1f1f1f" stroke-width="2"/>
+    <text x="800" y="228">empty</text>
+    <text x="800" y="246">warp 15</text>
+  </g>
+
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#b0b0b0">
+    <rect x="40" y="298" width="44" height="20" rx="10" fill="#ee4c2c"/>
+    <text x="62" y="312" text-anchor="middle" font-size="12" fill="#ffffff">Flex</text>
+    <text x="95" y="313">extension points</text>
+    <text x="230" y="313">score/mask mods (softmax/correction, compute) and block-sparse load/consume</text>
+  </g>
+</svg>
