@@ -107,46 +107,44 @@ Notably, no part of this stack needs to “know” what CuTeDSL code is until we
 
 Click through the tabs below to see how ALiBi evolves from user code to the final CuTeDSL kernel.
 
-[TODO confirm this modal works on final website]
-
-<div class="code-transform-tabs" style="font-family: system-ui, -apple-system, sans-serif; margin: 2em 0;">
-  <div style="display: flex; gap: 0; border-bottom: 2px solid #e5e5e5; margin-bottom: 0;">
-    <button onclick="showTab(this, 'original')" class="tab-btn active" style="padding: 12px 20px; border: none; background: #ee4c2c; color: white; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s;">Original</button>
-    <button onclick="showTab(this, 'fx')" class="tab-btn" style="padding: 12px 20px; border: none; background: #e5e5e5; color: #666; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s;">FX IR</button>
-    <button onclick="showTab(this, 'aot')" class="tab-btn" style="padding: 12px 20px; border: none; background: #e5e5e5; color: #666; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s;">AOTAutograd</button>
-    <button onclick="showTab(this, 'cute')" class="tab-btn" style="padding: 12px 20px; border: none; background: #e5e5e5; color: #666; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s;">CuTeDSL</button>
+<div class="code-transform-tabs" style="font-family: system-ui, -apple-system, sans-serif; margin: 2em 0; position: relative; z-index: 1;">
+  <div style="display: flex; flex-wrap: wrap; gap: 0; border-bottom: 2px solid #ccc; margin-bottom: 0;">
+    <button data-tab="original" class="tab-btn active" style="padding: 12px 20px; border: 1px solid #ccc; border-bottom: none; background: #ee4c2c; color: white; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; z-index: 2;">Original</button>
+    <button data-tab="fx" class="tab-btn" style="padding: 12px 20px; border: 1px solid #ccc; border-bottom: none; background: #f0f0f0; color: #555; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; z-index: 2;">FX IR</button>
+    <button data-tab="aot" class="tab-btn" style="padding: 12px 20px; border: 1px solid #ccc; border-bottom: none; background: #f0f0f0; color: #555; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; z-index: 2;">AOTAutograd</button>
+    <button data-tab="cute" class="tab-btn" style="padding: 12px 20px; border: 1px solid #ccc; border-bottom: none; background: #f0f0f0; color: #555; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; z-index: 2;">CuTeDSL</button>
   </div>
-  
-  <div id="original" class="tab-content" style="display: block; background: #1e1e1e; border-radius: 0 8px 8px 8px; overflow: hidden;">
-    <pre style="margin: 0; padding: 20px; overflow-x: auto;"><code style="color: #d4d4d4; font-family: 'Fira Code', Consolas, monospace; font-size: 14px; line-height: 1.6;"><span style="color: #569cd6;">def</span> <span style="color: #dcdcaa;">alibi_mod</span>(score, b, h, q_idx, kv_idx):
-	scale = torch.exp2(-((h + 1) * 8.0 / H))
-	bias = (kv_idx - q_idx) * scale
-    <span style="color: #c586c0;">return</span> score + bias</code></pre>
-    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #b0b0b0;">
+
+  <div id="tab-original" class="tab-content" style="display: block; border-radius: 0 8px 8px 8px; overflow: hidden;">
+    <pre class="language-python" style="margin: 0; border-radius: 0 8px 8px 0 !important;"><code class="language-python">def alibi_mod(score, b, h, q_idx, kv_idx):
+    scale = torch.exp2(-((h + 1) * 8.0 / H))
+    bias = (kv_idx - q_idx) * scale
+    return score + bias</code></pre>
+    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #555;">
       <strong style="color: #ee4c2c;">User Code</strong>: A score modification that implements ALiBi, the motivating example for the flex-attention project.
     </div>
   </div>
-  
-  <div id="fx" class="tab-content" style="display: none; background: #1e1e1e; border-radius: 0 8px 8px 8px; overflow: hidden;">
-    <pre style="margin: 0; padding: 20px; overflow-x: auto;"><code style="color: #d4d4d4; font-family: 'Fira Code', Consolas, monospace; font-size: 14px; line-height: 1.6;"><span style="color: #569cd6;">class</span> <span style="color: #4ec9b0;">score_mod_0</span>(torch.nn.Module):
-    <span style="color: #569cd6;">def</span> <span style="color: #dcdcaa;">forward</span>(self, child, child_1, child_2, child_3, child_4):
-        add: <span style="color: #ce9178;">"i32[][]cuda:0"</span> = child_2 + 1;  child_2 = None
-        mul: <span style="color: #ce9178;">"f32[][]cuda:0"</span> = add * 8.0;  add = None
-        truediv: <span style="color: #ce9178;">"f32[][]cuda:0"</span> = mul / 32;  mul = None
-        neg: <span style="color: #ce9178;">"f32[][]cuda:0"</span> = -truediv;  truediv = None
-        scale: <span style="color: #ce9178;">"f32[][]cuda:0"</span> = torch.exp2(neg);  neg = None
-        sub: <span style="color: #ce9178;">"i32[][]cuda:0"</span> = child_4 - child_3
-        bias: <span style="color: #ce9178;">"f32[][]cuda:0"</span> = sub * scale
-        add_1: <span style="color: #ce9178;">"f32[][]cuda:0"</span> = child + bias
-        <span style="color: #c586c0;">return</span> add_1</code></pre>
-    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #b0b0b0;">
-      <strong style="color: #ee4c2c;">Dynamo → FX IR</strong>: This looks a little different from the original, but if you squint you can see familiar PyTorch operators, along with a lot of variables being set to <code style="background: #2d2d2d; padding: 2px 6px; border-radius: 3px;">None</code> quickly after use.
+
+  <div id="tab-fx" class="tab-content" style="display: none; border-radius: 0 8px 8px 8px; overflow: hidden;">
+    <pre class="language-python" style="margin: 0; border-radius: 0 8px 8px 0 !important;"><code class="language-python">class score_mod_0(torch.nn.Module):
+    def forward(self, child, child_1, child_2, child_3, child_4):
+        add: "i32[][]cuda:0" = child_2 + 1;  child_2 = None
+        mul: "f32[][]cuda:0" = add * 8.0;  add = None
+        truediv: "f32[][]cuda:0" = mul / 32;  mul = None
+        neg: "f32[][]cuda:0" = -truediv;  truediv = None
+        scale: "f32[][]cuda:0" = torch.exp2(neg);  neg = None
+        sub: "i32[][]cuda:0" = child_4 - child_3
+        bias: "f32[][]cuda:0" = sub * scale
+        add_1: "f32[][]cuda:0" = child + bias
+        return add_1</code></pre>
+    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #555;">
+      <strong style="color: #ee4c2c;">Dynamo → FX IR</strong>: This looks a little different from the original, but if you squint you can see familiar PyTorch operators, along with a lot of variables being set to <code>None</code> quickly after use.
     </div>
   </div>
-  
-  <div id="aot" class="tab-content" style="display: none; background: #1e1e1e; border-radius: 0 8px 8px 8px; overflow: hidden;">
-    <pre style="margin: 0; padding: 20px; overflow-x: auto;"><code style="color: #d4d4d4; font-family: 'Fira Code', Consolas, monospace; font-size: 14px; line-height: 1.6;"><span style="color: #569cd6;">class</span> <span style="color: #4ec9b0;">fw_graph0</span>(torch.nn.Module):
-    <span style="color: #569cd6;">def</span> <span style="color: #dcdcaa;">forward</span>(self, arg0_1, arg1_1, arg2_1, arg3_1, arg4_1):
+
+  <div id="tab-aot" class="tab-content" style="display: none; border-radius: 0 8px 8px 8px; overflow: hidden;">
+    <pre class="language-python" style="margin: 0; border-radius: 0 8px 8px 0 !important;"><code class="language-python">class fw_graph0(torch.nn.Module):
+    def forward(self, arg0_1, arg1_1, arg2_1, arg3_1, arg4_1):
         add = torch.ops.aten.add.Tensor(arg2_1, 1)
         mul = torch.ops.aten.mul.Tensor(add, 8.0)
         div = torch.ops.aten.div.Tensor(mul, 32)
@@ -155,20 +153,20 @@ Click through the tabs below to see how ALiBi evolves from user code to the fina
         sub = torch.ops.aten.sub.Tensor(arg4_1, arg3_1)
         mul_1 = torch.ops.aten.mul.Tensor(sub, exp2)
         add_1 = torch.ops.aten.add.Tensor(arg0_1, mul_1)
-        <span style="color: #c586c0;">return</span> add_1
+        return add_1
 
-<span style="color: #569cd6;">class</span> <span style="color: #4ec9b0;">joint_graph0</span>(torch.nn.Module):  <span style="color: #6a9955;"># backward pass</span>
-    <span style="color: #569cd6;">def</span> <span style="color: #dcdcaa;">forward</span>(self, arg0_1, ..., arg5_1):
+class joint_graph0(torch.nn.Module):  # backward pass
+    def forward(self, arg0_1, ..., arg5_1):
         convert = torch.ops.prims.convert_element_type.default(arg5_1, torch.bfloat16)
-        <span style="color: #c586c0;">return</span> [convert, None, None, None, None]</code></pre>
-    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #b0b0b0;">
-      <strong style="color: #ee4c2c;">AOTAutograd</strong>: We auto-generate the backward pass. Here we have a very simple <code style="background: #2d2d2d; padding: 2px 6px; border-radius: 3px;">joint_graph</code>: since d/dx of (X + A) equals 1, the chain rule sends the backprop gradient straight through, with some data conversion if needed.
+        return [convert, None, None, None, None]</code></pre>
+    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #555;">
+      <strong style="color: #ee4c2c;">AOTAutograd</strong>: We auto-generate the backward pass. Here we have a very simple <code>joint_graph</code>: since d/dx of (X + A) equals 1, the chain rule sends the backprop gradient straight through, with some data conversion if needed.
     </div>
   </div>
-  
-  <div id="cute" class="tab-content" style="display: none; background: #1e1e1e; border-radius: 0 8px 8px 8px; overflow: hidden;">
-    <pre style="margin: 0; padding: 20px; overflow-x: auto;"><code style="color: #d4d4d4; font-family: 'Fira Code', Consolas, monospace; font-size: 14px; line-height: 1.6;"><span style="color: #dcdcaa;">@cute.jit</span>
-<span style="color: #569cd6;">def</span> <span style="color: #dcdcaa;">score_mod</span>(tSrS_ssa, b_idx, h_idx, q_idx, kv_idx, seqlen_info, aux_tensors):
+
+  <div id="tab-cute" class="tab-content" style="display: none; border-radius: 0 8px 8px 8px; overflow: hidden;">
+    <pre class="language-python" style="margin: 0; border-radius: 0 8px 8px 0 !important;"><code class="language-python">@cute.jit
+def score_mod(tSrS_ssa, b_idx, h_idx, q_idx, kv_idx, seqlen_info, aux_tensors):
     tmp1 = tSrS_ssa.to(cutlass.Float32)
     tmp4 = (kv_idx - q_idx)
     tmp5 = tmp4.to(cutlass.Float32)
@@ -182,28 +180,45 @@ Click through the tabs below to see how ALiBi evolves from user code to the fina
     tmp14 = (tmp5 * tmp13)
     tSrS_ssa = (tmp1 + tmp14)
 
-<span style="color: #dcdcaa;">@cute.jit</span>
-<span style="color: #569cd6;">def</span> <span style="color: #dcdcaa;">score_mod_bwd</span>(grad_score_mod_ssa, tSrS_ssa, ...):
+@cute.jit
+def score_mod_bwd(grad_score_mod_ssa, tSrS_ssa, ...):
     grad_score_mod_ssa_out = grad_score_mod_ssa</code></pre>
-    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #b0b0b0;">
+    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #555;">
       <strong style="color: #ee4c2c;">CuTeDSL</strong>: TensorSSA expressions that run in register memory. Inductor produces this automatically from the FX graph.
     </div>
   </div>
 </div>
 
 <script>
-function showTab(btn, tabId) {
-  const container = btn.closest('.code-transform-tabs');
-  container.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-  container.querySelectorAll('.tab-btn').forEach(b => {
-    b.style.background = '#e5e5e5';
-    b.style.color = '#666';
-  });
-  const tab = container.querySelector('#' + tabId);
-  if (tab) tab.style.display = 'block';
-  btn.style.background = '#ee4c2c';
-  btn.style.color = 'white';
-}
+(function() {
+  function showTab(btn, tabId) {
+    var container = btn.closest('.code-transform-tabs');
+    var tabs = container.querySelectorAll('.tab-content');
+    for (var i = 0; i < tabs.length; i++) tabs[i].style.display = 'none';
+    var btns = container.querySelectorAll('.tab-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].style.background = '#f0f0f0';
+      btns[i].style.color = '#555';
+    }
+    var tab = document.getElementById('tab-' + tabId);
+    if (tab) tab.style.display = 'block';
+    btn.style.background = '#ee4c2c';
+    btn.style.color = 'white';
+  }
+  function init() {
+    var buttons = document.querySelectorAll('.code-transform-tabs .tab-btn');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].addEventListener('click', function() {
+        showTab(this, this.getAttribute('data-tab'));
+      });
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
 </script>
 
 

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tab Widget Test</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+  <style>
+    .test-page-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<div class="test-page-wrapper">
+<p>Roughly speaking, <code>torch.compile</code> takes this user code and transforms it through several IRs. Click through the tabs below to see how ALiBi evolves from user code to the final CuTeDSL kernel:</p>
+
+<!-- ========== BEGIN WORDPRESS-EMBEDDABLE SNIPPET ========== -->
+
+<div class="code-transform-tabs" style="font-family: system-ui, -apple-system, sans-serif; margin: 2em 0; position: relative; z-index: 1;">
+  <div style="display: flex; flex-wrap: wrap; gap: 0; border-bottom: 2px solid #ccc; margin-bottom: 0;">
+    <button data-tab="original" class="tab-btn active" style="padding: 12px 20px; border: 1px solid #ccc; border-bottom: none; background: #ee4c2c; color: white; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; z-index: 2;">Original</button>
+    <button data-tab="fx" class="tab-btn" style="padding: 12px 20px; border: 1px solid #ccc; border-bottom: none; background: #f0f0f0; color: #555; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; z-index: 2;">FX IR</button>
+    <button data-tab="aot" class="tab-btn" style="padding: 12px 20px; border: 1px solid #ccc; border-bottom: none; background: #f0f0f0; color: #555; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; z-index: 2;">AOTAutograd</button>
+    <button data-tab="cute" class="tab-btn" style="padding: 12px 20px; border: 1px solid #ccc; border-bottom: none; background: #f0f0f0; color: #555; cursor: pointer; font-weight: 600; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; z-index: 2;">CuTeDSL</button>
+  </div>
+
+  <div id="tab-original" class="tab-content" style="display: block; border-radius: 0 8px 8px 8px; overflow: hidden;">
+    <pre class="language-python" style="margin: 0; border-radius: 0 8px 8px 0 !important;"><code class="language-python">def alibi_mod(score, b, h, q_idx, kv_idx):
+    scale = torch.exp2(-((h + 1) * 8.0 / H))
+    bias = (kv_idx - q_idx) * scale
+    return score + bias</code></pre>
+    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #555;">
+      <strong style="color: #ee4c2c;">User Code</strong> — A score modification that implements ALiBi—the motivating example for the flex-attention project.
+    </div>
+  </div>
+
+  <div id="tab-fx" class="tab-content" style="display: none; border-radius: 0 8px 8px 8px; overflow: hidden;">
+    <pre class="language-python" style="margin: 0; border-radius: 0 8px 8px 0 !important;"><code class="language-python">class score_mod_0(torch.nn.Module):
+    def forward(self, child, child_1, child_2, child_3, child_4):
+        add: "i32[][]cuda:0" = child_2 + 1;  child_2 = None
+        mul: "f32[][]cuda:0" = add * 8.0;  add = None
+        truediv: "f32[][]cuda:0" = mul / 32;  mul = None
+        neg: "f32[][]cuda:0" = -truediv;  truediv = None
+        scale: "f32[][]cuda:0" = torch.exp2(neg);  neg = None
+        sub: "i32[][]cuda:0" = child_4 - child_3
+        bias: "f32[][]cuda:0" = sub * scale
+        add_1: "f32[][]cuda:0" = child + bias
+        return add_1</code></pre>
+    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #555;">
+      <strong style="color: #ee4c2c;">Dynamo → FX IR</strong> — This looks a little different from the original, but if you squint you can see familiar PyTorch operators—along with a lot of variables being set to <code>None</code> quickly after use.
+    </div>
+  </div>
+
+  <div id="tab-aot" class="tab-content" style="display: none; border-radius: 0 8px 8px 8px; overflow: hidden;">
+    <pre class="language-python" style="margin: 0; border-radius: 0 8px 8px 0 !important;"><code class="language-python">class fw_graph0(torch.nn.Module):
+    def forward(self, arg0_1, arg1_1, arg2_1, arg3_1, arg4_1):
+        add = torch.ops.aten.add.Tensor(arg2_1, 1)
+        mul = torch.ops.aten.mul.Tensor(add, 8.0)
+        div = torch.ops.aten.div.Tensor(mul, 32)
+        neg = torch.ops.aten.neg.default(div)
+        exp2 = torch.ops.aten.exp2.default(neg)
+        sub = torch.ops.aten.sub.Tensor(arg4_1, arg3_1)
+        mul_1 = torch.ops.aten.mul.Tensor(sub, exp2)
+        add_1 = torch.ops.aten.add.Tensor(arg0_1, mul_1)
+        return add_1
+
+class joint_graph0(torch.nn.Module):  # backward pass
+    def forward(self, arg0_1, ..., arg5_1):
+        convert = torch.ops.prims.convert_element_type.default(arg5_1, torch.bfloat16)
+        return [convert, None, None, None, None]</code></pre>
+    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #555;">
+      <strong style="color: #ee4c2c;">AOTAutograd</strong> — We auto-generate the backward pass. Here we have a very simple <code>joint_graph</code>: since d/dx of (X + A) equals 1, the chain rule sends the backprop gradient straight through, with some data conversion if needed.
+    </div>
+  </div>
+
+  <div id="tab-cute" class="tab-content" style="display: none; border-radius: 0 8px 8px 8px; overflow: hidden;">
+    <pre class="language-python" style="margin: 0; border-radius: 0 8px 8px 0 !important;"><code class="language-python">@cute.jit
+def score_mod(tSrS_ssa, b_idx, h_idx, q_idx, kv_idx, seqlen_info, aux_tensors):
+    tmp1 = tSrS_ssa.to(cutlass.Float32)
+    tmp4 = (kv_idx - q_idx)
+    tmp5 = tmp4.to(cutlass.Float32)
+    tmp7 = (h_idx + cute.full_like(h_idx, 1))
+    tmp8 = tmp7.to(cutlass.Float32)
+    tmp9 = (tmp8 * cute.full_like(tmp8, 8.0))
+    tmp10 = (tmp9 * cute.full_like(tmp9, 0.03125))
+    tmp11 = cute.TensorSSA(-tmp10, tmp10.shape, tmp10.dtype)
+    tmp12 = (tmp11 * cute.full_like(tmp11, 0.6931471805599453))
+    tmp13 = cute.math.exp2(tmp12 * 1.4426950408889634)
+    tmp14 = (tmp5 * tmp13)
+    tSrS_ssa = (tmp1 + tmp14)
+
+@cute.jit
+def score_mod_bwd(grad_score_mod_ssa, tSrS_ssa, ...):
+    grad_score_mod_ssa_out = grad_score_mod_ssa</code></pre>
+    <div style="background: linear-gradient(to right, #ee4c2c22, #ee4c2c11); border-top: 1px solid #ee4c2c44; padding: 12px 20px; font-size: 13px; color: #555;">
+      <strong style="color: #ee4c2c;">CuTeDSL</strong> — The final kernel. Notably, no part of this stack needs to "know" what CuTeDSL code is until we get to Inductor, which ultimately produces the final kernel code that gets run.
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function showTab(btn, tabId) {
+    var container = btn.closest('.code-transform-tabs');
+    var tabs = container.querySelectorAll('.tab-content');
+    for (var i = 0; i < tabs.length; i++) tabs[i].style.display = 'none';
+    var btns = container.querySelectorAll('.tab-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].style.background = '#f0f0f0';
+      btns[i].style.color = '#555';
+    }
+    var tab = document.getElementById('tab-' + tabId);
+    if (tab) tab.style.display = 'block';
+    btn.style.background = '#ee4c2c';
+    btn.style.color = 'white';
+  }
+  function init() {
+    var buttons = document.querySelectorAll('.code-transform-tabs .tab-btn');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].addEventListener('click', function() {
+        showTab(this, this.getAttribute('data-tab'));
+      });
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+<!-- ========== END WORDPRESS-EMBEDDABLE SNIPPET ========== -->
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>
